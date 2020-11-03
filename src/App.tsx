@@ -2,7 +2,6 @@ import React from 'react';
 import { Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import Home from './pages/Home';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -22,15 +21,22 @@ import '@ionic/react/css/display.css';
 
 /* Theme variables */
 import './theme/variables.css';
+import { VisitProvider } from './todo/VisistProvider';
+import VisitList from './todo/VisitList';
+import VisitEdit from './todo/VisitEdit';
 
 const App: React.FC = () => (
   <IonApp>
-    <IonReactRouter>
-      <IonRouterOutlet>
-        <Route path="/home" component={Home} exact={true} />
-        <Route exact path="/" render={() => <Redirect to="/home" />} />
-      </IonRouterOutlet>
-    </IonReactRouter>
+    <VisitProvider>
+      <IonReactRouter>
+        <IonRouterOutlet>
+          <Route path="/visits" component={VisitList} exact={true} />
+          <Route path="/visit" component={VisitEdit} exact={true} />
+          <Route path="/visit/:id" component={VisitEdit} exact={true} />
+          <Route exact path="/" render={() => <Redirect to="/visits" />} />
+        </IonRouterOutlet>
+      </IonReactRouter>
+    </VisitProvider>
   </IonApp>
 );
 
