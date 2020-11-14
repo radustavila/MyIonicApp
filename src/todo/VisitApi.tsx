@@ -5,7 +5,7 @@ import { VisitProps } from './VisitProps'
 
 const log = getLogger('visitApi')
 const baseUrl = 'localhost:3000'
-const visitUrl = `http://${baseUrl}/api/visit`
+const visitUrl = `http://${baseUrl}/api/visits`
 
 const config = {
     headers: {

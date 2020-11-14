@@ -24,19 +24,23 @@ import './theme/variables.css';
 import { VisitProvider } from './todo/VisistProvider';
 import VisitList from './todo/VisitList';
 import VisitEdit from './todo/VisitEdit';
+import { AuthProvider, Login } from './auth';
 
 const App: React.FC = () => (
   <IonApp>
-    <VisitProvider>
-      <IonReactRouter>
-        <IonRouterOutlet>
-          <Route path="/visits" component={VisitList} exact={true} />
-          <Route path="/visit" component={VisitEdit} exact={true} />
-          <Route path="/visit/:id" component={VisitEdit} exact={true} />
+    <IonReactRouter>
+      <IonRouterOutlet>
+        <AuthProvider>
+          <Route path="/login" component={Login} exact={true}/>
+          <VisitProvider>
+            <Route path="/visits" component={VisitList} exact={true} />
+            <Route path="/visit" component={VisitEdit} exact={true} />
+            <Route path="/visit/:id" component={VisitEdit} exact={true} />
+          </VisitProvider>
           <Route exact path="/" render={() => <Redirect to="/visits" />} />
-        </IonRouterOutlet>
-      </IonReactRouter>
-    </VisitProvider>
+        </AuthProvider>
+      </IonRouterOutlet>
+    </IonReactRouter>
   </IonApp>
 );
 
