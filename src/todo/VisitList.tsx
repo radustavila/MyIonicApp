@@ -1,24 +1,39 @@
-import { IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonList, IonLoading, IonPage, IonTitle, IonToolbar } from "@ionic/react";
+import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonList, IonLoading, IonPage, IonTitle, IonToolbar } from "@ionic/react";
 import { add } from "ionicons/icons";
 import React, { useContext } from "react";
 import { RouteComponentProps } from "react-router";
 import { getLogger } from "../core";
 import { VisitContext } from "./VisitProvider";
 import Visit from "./Visit";
-
+import { Plugins } from "@capacitor/core";
 
 
 const log = getLogger('VisitList')
 
 const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
-    const { visits, fetching, fetchingError } = useContext(VisitContext)
-    log('render')
 
+    const { visits, fetching, fetchingError } = useContext(VisitContext)
+    const { Storage } = Plugins
+    
+    const handleLogout = () => {
+        Storage.remove({ key: 'user' })
+        
+        log("LOGOUT")
+
+        window.location.reload()
+    }
+
+    log('render')
     return (
         <IonPage>
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>Visit Tracer</IonTitle>
+                    <IonButtons slot="end">
+                        <IonButton onClick={handleLogout}>
+                            Logout
+                        </IonButton>
+                    </IonButtons>
                 </IonToolbar>
             </IonHeader>
             <IonContent>

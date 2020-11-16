@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { getLogger } from '../core';
 import { login as loginApi } from './AuthApi';
+import { Plugins } from '@capacitor/core';
+
 
 const log = getLogger('AuthProvider')
 
@@ -28,23 +30,28 @@ const initialState: AuthState = {
 
 export const AuthContext = React.createContext<AuthState>(initialState)
 
+
+
 interface AuthProviderProps {
     children: PropTypes.ReactNodeLike
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+    const { Storage } = Plugins
     const [ state, setState ] = useState<AuthState>(initialState)
     const { isAuthenticated, isAuthenticating, authenticationError, pendingAuthentication, token } = state
     const login = useCallback<LoginFn>(loginCallback, []);
+
     useEffect(authenticationEffect, [pendingAuthentication])
     const value = { isAuthenticated, login, isAuthenticating, authenticationError, token }
+    
     log('render')
-
     return (
         <AuthContext.Provider value = { value }>
             { children }
         </AuthContext.Provider>
     )
+
 
     function loginCallback(username?: string, password?: string): void {
         log('login')
@@ -58,11 +65,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     function authenticationEffect() {
         let canceled = false
+
+        alreadyLoggedIn()
         authenticate()
         
         return () => {
             canceled = true
         }
+        
+        async function alreadyLoggedIn() {
+            const res = await Storage.get({ key: 'user' })
+            if (res.value) {
+                log('User logged in already!')
+                const user = JSON.parse(res.value)
+                setState({
+                    ...state,
+                    username: user.username,
+                    password: user.password,
+                    token: user.token,
+                    isAuthenticated: true,
+                    pendingAuthentication: false
+                })
+            } else {
+                log('No user logged in!')
+            }
+        }
+    
+
 
         async function authenticate() {
             if (!pendingAuthentication) {
@@ -88,6 +117,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     isAuthenticated: true,
                     isAuthenticating: false
                 })
+                
+                await Storage.set({
+                    key: 'user',
+                    value: JSON.stringify({
+                        username: username,
+                        password: password,
+                        token: token
+                    })
+                })
+                log('save user succeeded')
             } catch (error) {
                 if (canceled) {
                     return

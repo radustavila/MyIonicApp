@@ -26,6 +26,7 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
   const [placeName, setPlace] = useState('')
   const [noPersons1, setNoPersons] = useState('')
   const [visit, setVisit] = useState<VisitProps>();
+  
   useEffect(() => {
     log('useEffect');
     const routeId = match.params.id || '';
@@ -37,12 +38,14 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
       setNoPersons(visit.noPersons.toString())
     }
   }, [match.params.id, visits]);
+
   const handleSave = () => {
     const noPersons = parseInt(noPersons1)
     const date = new Date().toISOString()
     const editedVisit = visit ? { ...visit, placeName, noPersons } : { placeName, noPersons, date };
     saveVisit && saveVisit(editedVisit).then(() => history.goBack());
   };
+
   log('render');
   return (
     <IonPage>
