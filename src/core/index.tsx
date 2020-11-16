@@ -22,6 +22,7 @@ export function withLogs<T>(promise: Promise<ResponseProps<T>>, fnName: string):
     });
 }
 
+
 export const config = {
   headers: {
     'Content-Type': 'application/json'

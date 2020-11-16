@@ -11,7 +11,7 @@ interface VisitPropsExt extends VisitProps {
 const Visit: React.FC<VisitPropsExt> = ({ _id, placeName, date, noPersons, onEdit }) => {
     return (
         <IonItem onClick={() => onEdit(_id)}>
-            <IonLabel>{placeName + " - NoPersons: " + noPersons + ", " + date}</IonLabel>
+            <IonLabel>{"ID: " + _id + " ||| " + placeName + " - NoPersons: " + noPersons + ", " + date}</IonLabel>
         </IonItem>
     )
 }

@@ -21,10 +21,10 @@ import '@ionic/react/css/display.css';
 
 /* Theme variables */
 import './theme/variables.css';
-import { VisitProvider } from './todo/VisistProvider';
+import { VisitProvider } from './todo/VisitProvider';
 import VisitList from './todo/VisitList';
 import VisitEdit from './todo/VisitEdit';
-import { AuthProvider, Login } from './auth';
+import { AuthProvider, Login, PrivateRoute } from './auth';
 
 const App: React.FC = () => (
   <IonApp>
@@ -33,9 +33,9 @@ const App: React.FC = () => (
         <AuthProvider>
           <Route path="/login" component={Login} exact={true}/>
           <VisitProvider>
-            <Route path="/visits" component={VisitList} exact={true} />
-            <Route path="/visit" component={VisitEdit} exact={true} />
-            <Route path="/visit/:id" component={VisitEdit} exact={true} />
+            <PrivateRoute path="/visits" component={VisitList} exact={true} />
+            <PrivateRoute path="/visit" component={VisitEdit} exact={true} />
+            <PrivateRoute path="/visit/:id" component={VisitEdit} exact={true} />
           </VisitProvider>
           <Route exact path="/" render={() => <Redirect to="/visits" />} />
         </AuthProvider>

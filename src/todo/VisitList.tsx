@@ -3,7 +3,7 @@ import { add } from "ionicons/icons";
 import React, { useContext } from "react";
 import { RouteComponentProps } from "react-router";
 import { getLogger } from "../core";
-import { VisitContext } from "./VisistProvider";
+import { VisitContext } from "./VisitProvider";
 import Visit from "./Visit";
 
 
