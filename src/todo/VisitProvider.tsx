@@ -4,6 +4,7 @@ import { getLogger } from '../core';
 import { VisitProps } from './VisitProps';
 import { createVisit, getAllVisits, newWebSocket, updateVisit } from './VisitApi';
 import { AuthContext } from '../auth';
+import { Plugins } from '@capacitor/core';
 
 const log = getLogger('ItemProvider');
 
@@ -72,6 +73,7 @@ interface ItemProviderProps {
 }
 
 export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
+  const { Storage } = Plugins
   const { token } = useContext(AuthContext);
   const [state, dispatch] = useReducer(reducer, initialState);
   const { visits, fetching, fetchingError, saving, savingError } = state;
@@ -103,12 +105,28 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
         dispatch({ type: FETCH_VISITS_STARTED });
         const visits = await getAllVisits(token);
         log('fetchVisits succeeded');
+
+        await Storage.set({
+          key: 'visits',
+          value: JSON.stringify(visits)
+        })
+        
+
         if (!canceled) {
           dispatch({ type: FETCH_VISITS_SUCCEEDED, payload: { visits } });
         }
       } catch (error) {
-        log('fetchVisits failed');
-        dispatch({ type: FETCH_VISITS_FAILED, payload: { error } });
+        log('fetchVisits from server failed');
+        const res = await Storage.get({ key: 'visits' })
+        if (res.value) {
+          log('visits in local storage')
+          const visits = JSON.parse(res.value)
+          if (!canceled) {
+            dispatch({ type: FETCH_VISITS_SUCCEEDED, payload: { visits } });
+          }
+        } else {
+          dispatch({ type: FETCH_VISITS_FAILED, payload: { error } });
+        }
       }
     }
   }

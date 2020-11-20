@@ -18,13 +18,10 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
     
     const handleLogout = () => {
         Storage.remove({ key: 'user' })
+        Storage.remove({ key: 'visits'})
         log("LOGOUT")
         window.location.reload()
     }
-
-
-    
-    
 
     log('render')
     return (

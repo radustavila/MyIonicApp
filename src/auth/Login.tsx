@@ -42,6 +42,7 @@ export const Login: React.FC<RouteComponentProps> = ({ history }) => {
                         username: e.detail.value || ''
                     })}/>
                 <IonInput
+                    type = "password"
                     placeholder = "Password"
                     value = { password }
                     onIonChange = { e => setState({
