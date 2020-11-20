@@ -10,6 +10,10 @@ export const getAllVisits: (token: string) => Promise<VisitProps[]> = token => {
     return withLogs(axios.get(visitUrl, authConfig(token)), 'getAllVisits')
 }
 
+export const getSomeVisits: (token: string, start: number, count: number) => Promise<VisitProps[]> = (token, start, count) => {
+    return withLogs(axios.get(`${visitUrl}/get/${start}/${count}`, authConfig(token)), `getSomeVisits: ${start} - ${start + count}`)
+}
+
 export const createVisit: (token: string, visit: VisitProps) => Promise<VisitProps[]> = (token, visit) => {
     return withLogs(axios.post(visitUrl, visit, authConfig(token)), 'createVisit')
 }

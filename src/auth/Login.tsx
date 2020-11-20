@@ -34,7 +34,7 @@ export const Login: React.FC<RouteComponentProps> = ({ history }) => {
                 </IonToolbar>
             </IonHeader>
             <IonContent>
-                <IonInput
+                <IonInput 
                     placeholder = "Username"
                     value = { username }
                     onIonChange = { e => setState({

@@ -8,6 +8,7 @@ import { AuthContext } from '../auth';
 const log = getLogger('ItemProvider');
 
 type SaveVisitFn = (visit: VisitProps) => Promise<any>;
+type SaveVisitsFn = (visits: VisitProps[]) => Promise<any>;
 
 export interface VisitState {
   visits?: VisitProps[],
@@ -16,6 +17,7 @@ export interface VisitState {
   saving: boolean,
   savingError?: Error | null,
   saveVisit?: SaveVisitFn,
+  setVisits?: SaveVisitsFn
 }
 
 interface ActionProps {
@@ -73,6 +75,7 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
   const { token } = useContext(AuthContext);
   const [state, dispatch] = useReducer(reducer, initialState);
   const { visits, fetching, fetchingError, saving, savingError } = state;
+  //const [items, setItems] = useState<string[]>([]);
   useEffect(getVisitsEffect, [token]);
   useEffect(wsEffect, [token]);
   const saveVisit = useCallback<SaveVisitFn>(saveVisitCallback, [token]);
@@ -122,6 +125,7 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
       dispatch({ type: SAVE_VISIT_FAILED, payload: { error } });
     }
   }
+
 
   function wsEffect() {
     let canceled = false;

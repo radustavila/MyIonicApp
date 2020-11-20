@@ -1,6 +1,6 @@
-import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonList, IonLoading, IonPage, IonTitle, IonToolbar } from "@ionic/react";
+import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonList, IonLoading, IonPage, IonSearchbar, IonTitle, IonToolbar } from "@ionic/react";
 import { add } from "ionicons/icons";
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { RouteComponentProps } from "react-router";
 import { getLogger } from "../core";
 import { VisitContext } from "./VisitProvider";
@@ -14,14 +14,17 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
 
     const { visits, fetching, fetchingError } = useContext(VisitContext)
     const { Storage } = Plugins
+    const [searchVisitByPlace, setSearchVisitByPlace] = useState<string>('');
     
     const handleLogout = () => {
         Storage.remove({ key: 'user' })
-        
         log("LOGOUT")
-
         window.location.reload()
     }
+
+
+    
+    
 
     log('render')
     return (
@@ -38,9 +41,16 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
             </IonHeader>
             <IonContent>
                 <IonLoading isOpen={fetching} message='Fetching Visits...'/>
+                <IonSearchbar
+                    value={searchVisitByPlace}
+                    color="primary"
+                    onIonChange={e => setSearchVisitByPlace(e.detail.value!)}>
+                </IonSearchbar> 
                 { visits && (
                     <IonList>
-                        { visits.map(({ _id, placeName, noPersons, date }) => 
+                        { visits
+                            .filter(visit => visit.placeName.indexOf(searchVisitByPlace) >= 0)   
+                            .map(({ _id, placeName, noPersons, date }) => 
                         <Visit key={_id} 
                             _id={_id} 
                             placeName={placeName} 
@@ -48,6 +58,7 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
                             date={date} 
                             onEdit={_id => history.push(`/visit/${_id}`)} 
                         /> )}
+                        
                     </IonList>
                 )}
                 { fetchingError && (

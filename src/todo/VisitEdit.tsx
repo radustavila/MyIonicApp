@@ -41,7 +41,7 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
 
   const handleSave = () => {
     const noPersons = parseInt(noPersons1)
-    const date = new Date().toISOString()
+    const date = new Date().toISOString().slice(0, -1)
     const editedVisit = visit ? { ...visit, placeName, noPersons } : { placeName, noPersons, date };
     saveVisit && saveVisit(editedVisit).then(() => history.goBack());
   };
