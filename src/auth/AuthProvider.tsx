@@ -80,8 +80,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 const user = JSON.parse(res.value)
                 setState({
                     ...state,
-                    username: user.username,
-                    password: user.password,
+                    // username: user.username,
+                    // password: user.password,
                     token: user.token,
                     isAuthenticated: true,
                     pendingAuthentication: false
@@ -121,8 +121,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 await Storage.set({
                     key: 'user',
                     value: JSON.stringify({
-                        username: username,
-                        password: password,
+                        // username: username,
+                        // password: password,
                         token: token
                     })
                 })

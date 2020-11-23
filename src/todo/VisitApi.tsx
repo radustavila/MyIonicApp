@@ -6,12 +6,24 @@ import { VisitProps } from './VisitProps'
 const log = getLogger('visitApi')
 const visitUrl = `http://${baseUrl}/api/visits`
 
-export const getAllVisits: (token: string) => Promise<VisitProps[]> = token => {
-    return withLogs(axios.get(visitUrl, authConfig(token)), 'getAllVisits')
+interface MyResponse {
+    visits: VisitProps[]
+    totalPages: number
 }
 
-export const getSomeVisits: (token: string, start: number, count: number) => Promise<VisitProps[]> = (token, start, count) => {
-    return withLogs(axios.get(`${visitUrl}/get/${start}/${count}`, authConfig(token)), `getSomeVisits: ${start} - ${start + count}`)
+export const getVisits: (token: string, page: number, limit: number, filter: number) 
+=> Promise<MyResponse> = (token, page, limit, filter) => {
+    let query = ''
+    if (page && limit && filter === 0) {
+        query = `?page=${page}&limit=${limit}`
+    } else if (filter !== 0) {
+        query = `?filter=${filter}`
+    }
+    return withLogs(axios.get(`${visitUrl}${query}`, authConfig(token)), 'getAllVisits')
+}
+
+export const getListNoPersons: (token: string) => Promise<number[]> = (token) => {
+    return withLogs(axios.get(`${visitUrl}/no-persons`, authConfig(token)), 'getListNoPersons')
 }
 
 export const createVisit: (token: string, visit: VisitProps) => Promise<VisitProps[]> = (token, visit) => {

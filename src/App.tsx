@@ -1,6 +1,6 @@
 import React from 'react';
 import { Redirect, Route } from 'react-router-dom';
-import { IonApp, IonIcon, IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs } from '@ionic/react';
+import { IonApp, IonRouterOutlet } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 
 /* Core CSS required for Ionic components to work properly */
@@ -24,37 +24,22 @@ import './theme/variables.css';
 import { VisitProvider } from './todo/VisitProvider';
 import VisitList from './todo/VisitList';
 import VisitEdit from './todo/VisitEdit';
-import VisitListPieces from './todo/VisitListPieces';
 import { AuthProvider, Login, PrivateRoute } from './auth';
-import { ellipse, triangle } from 'ionicons/icons';
 
 const App: React.FC = () => (
   <IonApp>
     <IonReactRouter>
-    <IonTabs>
       <IonRouterOutlet>
         <AuthProvider>
           <Route path="/login" component={Login} exact={true}/>
           <VisitProvider>
-            <PrivateRoute path="/all-visits" component={VisitList} exact={true} />
-            <PrivateRoute path="/visits" component={VisitListPieces} exact={true} />
+            <PrivateRoute path="/visits" component={VisitList} exact={true} />
             <PrivateRoute path="/visit" component={VisitEdit} exact={true} />
             <PrivateRoute path="/visit/:id" component={VisitEdit} exact={true} />
           </VisitProvider>
-          <Route exact path="/" render={() => <Redirect to="/all-visits" />} />
+          <Route exact path="/" render={() => <Redirect to="/visits" />} />
         </AuthProvider>
       </IonRouterOutlet>
-      <IonTabBar slot="bottom">
-          <IonTabButton tab="tab1" href="/all-visits">
-            <IonIcon icon={triangle} />
-            <IonLabel>All Visits</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="tab2" href="/visits">
-            <IonIcon icon={ellipse} />
-            <IonLabel>Infinite Scroll</IonLabel>
-          </IonTabButton>
-          </IonTabBar>
-      </IonTabs>
     </IonReactRouter>
   </IonApp>
 );

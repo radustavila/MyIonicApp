@@ -1,0 +1,13 @@
+.item {
+    padding: 10px;
+    margin-top: 15px;
+    font-size: xx-large;
+}
+
+ion-select::part(text) {
+    color: #a9a9a9;
+}
+
+.clearBtn {
+    margin-left: 10px;
+}
