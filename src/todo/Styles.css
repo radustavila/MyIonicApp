@@ -11,3 +11,17 @@ ion-select::part(text) {
 .clearBtn {
     margin-left: 10px;
 }
+
+.network-icon-true {
+    color: green;
+    margin-left: 10px;
+}
+
+.network-icon-false {
+    color: red;
+    margin-left: 10px;
+}
+
+.my-toast {
+    text-align: center;
+}

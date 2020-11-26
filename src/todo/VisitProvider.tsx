@@ -6,6 +6,7 @@ import { createVisit, getListNoPersons, getVisits, newWebSocket, updateVisit } f
 import { AuthContext } from '../auth';
 import { Plugins } from '@capacitor/core';
 
+
 const log = getLogger('ItemProvider');
 
 type SaveVisitFn = (visit: VisitProps) => Promise<any>;
@@ -25,7 +26,8 @@ export interface VisitState {
   noPersonsList: number[],
   selection: number,
   isSelected: boolean
-  onSelection?: GetFilteredVisitsFn
+  onSelection?: GetFilteredVisitsFn,
+  serverConnection: boolean
 }
 
 interface ActionProps {
@@ -41,11 +43,12 @@ const initialState: VisitState = {
   totalPages: 1,
   noPersonsList: [],
   selection: 0,
-  isSelected: false
+  isSelected: false,
+  serverConnection: true
 };
 
 const { Storage } = Plugins
-const VISITS_COUNT = 8;
+const VISITS_COUNT = 8; // TO  MODIFY
 const FETCH_VISITS_STARTED = 'FETCH_VISITS_STARTED';
 const FETCH_VISITS_SUCCEEDED = 'FETCH_VISITS_SUCCEEDED';
 const FETCH_VISITS_FAILED = 'FETCH_VISITS_FAILED';
@@ -57,6 +60,7 @@ const UPDATE_SELECTION = 'UPDATE_SELECTION';
 const UPDATE_IS_SELECTED = 'UPDATE_IS_SELECTED';
 const FETCH_LIST_NO_PERSONS = 'FETCH_LIST_NO_PERSONS';
 const CLEAR_SELECTION_VISITS = 'CLEAR_SELECTION_VISITS';
+const UPDATE_SERVER_CONNECTION = 'UPDATE_SERVER_CONNECTION'
 
 
 const reducer: (state: VisitState, action: ActionProps) => VisitState =
@@ -103,6 +107,8 @@ const reducer: (state: VisitState, action: ActionProps) => VisitState =
           return { ...state, isSelected: false, selection: payload.filter, visits: [], page: 1 }
         }
         return { ...state, isSelected: false, filter: payload.filter }
+      case UPDATE_SERVER_CONNECTION:
+        return { ...state, serverConnection: payload.serverConnection }
       default:
         return state;
     }
@@ -117,12 +123,16 @@ interface ItemProviderProps {
 export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
   
   const { token } = useContext(AuthContext);
-
   const [state, dispatch] = useReducer(reducer, initialState);
+  
   const { visits, fetching, fetchingError,
     saving, savingError,
     page, totalPages, 
-    noPersonsList, selection, isSelected } = state;
+    noPersonsList, selection, isSelected,
+    serverConnection 
+  } = state;
+
+  log(state)
 
   useEffect(getVisitsEffect, [token, page, selection]);
   useEffect(getListNoPersonsEffect, [token]);
@@ -144,7 +154,9 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
     visits, fetching, fetchingError,
     saving, savingError, saveVisit,
     page, totalPages, loadMore,
-    noPersonsList, selection, isSelected, onSelection
+    noPersonsList, selection, isSelected, onSelection, 
+    
+    serverConnection
   };
 
   log('returns');
@@ -195,12 +207,15 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
         dispatch({ type: FETCH_VISITS_STARTED });
         const res = await getVisits(token, page, VISITS_COUNT, selection);
         log('fetchVisits succeeded');
-
+        dispatch({ type: UPDATE_SERVER_CONNECTION, payload: { serverConnection: true } })
         if (!canceled) {
           dispatch({ type: FETCH_VISITS_SUCCEEDED, payload: { visits: res.visits, page, totalPages: res.totalPages } });    
         }
       } catch (error) {
         log('fetchVisits from server failed');
+        if (error.message === 'Network Error') {
+          dispatch({ type: UPDATE_SERVER_CONNECTION, payload:{ serverConnection: false} })
+        }
 
         const res = await Storage.get({ key: 'visits' })
         if (res.value) {

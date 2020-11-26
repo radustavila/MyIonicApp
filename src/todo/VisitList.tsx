@@ -1,5 +1,5 @@
-import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonLoading, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/react";
-import { add } from "ionicons/icons";
+import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonLoading, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToast, IonToolbar } from "@ionic/react";
+import { add, wifi } from "ionicons/icons";
 import React, { useContext, useState } from "react";
 import { RouteComponentProps } from "react-router";
 import { getLogger } from "../core";
@@ -7,6 +7,7 @@ import { VisitContext } from "./VisitProvider";
 import Visit from "./Visit";
 import { Plugins } from "@capacitor/core";
 import './Styles.css'
+import { useNetworkStatus } from "../core/useNetworkStatus";
 
 
 const log = getLogger('VisitList')
@@ -14,9 +15,14 @@ const log = getLogger('VisitList')
 const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
     
     const { Storage } = Plugins
-    const { visits, fetching, fetchingError, loadMore, noPersonsList, onSelection, isSelected } = useContext(VisitContext)
+    const { networkStatus } = useNetworkStatus()
+    const { visits, fetching, fetchingError, 
+        loadMore, noPersonsList, onSelection, 
+        isSelected, 
+        serverConnection 
+    } = useContext(VisitContext)
     const [ searchVisitByPlace, setSearchVisitByPlace ] = useState<string>('');
-    
+
     const handleLogout = () => {
         Storage.remove({ key: 'user' })
         Storage.remove({ key: 'visits'})
@@ -37,12 +43,17 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
         ($event.target as HTMLIonInfiniteScrollElement).complete();
     }
 
+    console.log(serverConnection)
+
     log('render')
     return (
         <IonPage>
             <IonHeader>
                 <IonToolbar>
-                    <IonTitle>Visit Tracer</IonTitle>
+                    <IonTitle>
+                        Visit Tracer
+                        <IonIcon className={"network-icon-" + networkStatus.connected} icon={wifi}></IonIcon>
+                    </IonTitle>
                     <IonButtons slot="end">
                         <IonButton onClick={handleLogout}>
                             Logout
@@ -52,7 +63,12 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
             </IonHeader>
             <IonContent>
                 <IonLoading isOpen={fetching} message='Fetching Visits...'/>
-                
+                <IonToast
+                    isOpen={!serverConnection ? true : false}
+                    cssClass="my-toast"
+                    message='There is no connection to the server! Work will be saved locally.'
+                    duration={5000}
+                />
                 <IonSearchbar
                     value={searchVisitByPlace}
                     color="primary"
