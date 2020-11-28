@@ -34,6 +34,10 @@ export const updateVisit: (token: string, visit: VisitProps) => Promise<VisitPro
     return withLogs(axios.put(`${visitUrl}/${visit._id}`, visit, authConfig(token)), 'updateVisit')
 }
 
+export const checkServer: (token: string) => Promise<any> = (token) => {
+    console.log('TOKEN: ' + token)
+    return withLogs(axios.get(`${visitUrl}/check-server`, authConfig(token)), 'check server').then(res => {return res})
+}
 
 interface MessageData {
     type: string

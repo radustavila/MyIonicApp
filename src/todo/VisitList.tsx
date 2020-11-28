@@ -43,8 +43,6 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
         ($event.target as HTMLIonInfiniteScrollElement).complete();
     }
 
-    console.log(serverConnection)
-
     log('render')
     return (
         <IonPage>
@@ -102,7 +100,7 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
                         
                     </IonList>
                 )}
-                <IonInfiniteScroll threshold="100px"
+                <IonInfiniteScroll threshold="1px"
                     onIonInfinite={(e: CustomEvent<void>) => searchNext(e)}>
                     <IonInfiniteScrollContent
                         loadingText="Loading more visits...">

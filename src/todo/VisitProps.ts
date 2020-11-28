@@ -1,5 +1,5 @@
 export interface VisitProps {
-    _id?: string
+    _id?: number
     placeName: string
     date: string
     noPersons: number

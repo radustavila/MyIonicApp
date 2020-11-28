@@ -8,7 +8,7 @@ import {
   IonLoading,
   IonPage,
   IonTitle,
-  IonToolbar, IonLabel, IonItem
+  IonToolbar, IonLabel, IonItem, IonToast
 } from '@ionic/react';
 import { getLogger } from '../core';
 import { VisitContext } from './VisitProvider';
@@ -26,11 +26,12 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
   const [placeName, setPlace] = useState('')
   const [noPersons1, setNoPersons] = useState('')
   const [visit, setVisit] = useState<VisitProps>();
+  const [ numberError, setNumberError ] = useState<string | undefined>()
   
   useEffect(() => {
     log('useEffect');
     const routeId = match.params.id || '';
-    const visit = visits?.find(it => it._id === routeId);
+    const visit = visits?.find(it => it._id?.toString() === routeId);
     
     setVisit(visit);
     if (visit) {
@@ -38,12 +39,17 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
       setNoPersons(visit.noPersons.toString())
     }
   }, [match.params.id, visits]);
-
   const handleSave = () => {
+    
     const noPersons = parseInt(noPersons1)
-    const date = new Date().toISOString().slice(0, -1)
-    const editedVisit = visit ? { ...visit, placeName, noPersons } : { placeName, noPersons, date };
-    saveVisit && saveVisit(editedVisit).then(() => history.goBack());
+    if (Number.isNaN(noPersons)) {
+      setNumberError("The number of persons is not valid!")
+    }
+    else {
+      const date = new Date().toISOString().slice(0, -1)
+      const editedVisit = visit ? { ...visit, placeName, noPersons } : { placeName, noPersons, date };
+      saveVisit && saveVisit(editedVisit, false).then(() => history.goBack());
+    }
   };
 
   log('render');
@@ -59,16 +65,21 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
           </IonButtons>
         </IonToolbar>
       </IonHeader>
-      <IonContent>
-      <IonItem>
-        <IonLabel>Place: </IonLabel>
-        <IonInput value={ placeName } onIonChange={e => setPlace(e.detail.value || '')} />
-    </IonItem>
-    <IonItem>
-        <IonLabel>NoPersons: </IonLabel>
-        <IonInput value={ noPersons1 } onIonChange={e => setNoPersons(e.detail.value || '')} />
-    </IonItem>
-        
+        <IonContent>
+        <IonItem>
+          <IonLabel>Place: </IonLabel>
+          <IonInput value={ placeName } onIonChange={e => setPlace(e.detail.value || '')} />
+        </IonItem>
+        <IonItem>
+          <IonLabel>NoPersons: </IonLabel>
+          <IonInput value={ noPersons1 } onIonChange={e => setNoPersons(e.detail.value || '')} />
+        </IonItem>
+        <IonToast
+          isOpen={numberError ? true : false}
+          cssClass="my-toast"
+          message={numberError}
+          duration={5000}
+        />
         <IonLoading isOpen={saving} />
         {savingError && (
           <div>{savingError.message || 'Failed to save visit'}</div>

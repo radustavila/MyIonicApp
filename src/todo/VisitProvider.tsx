@@ -2,14 +2,15 @@ import React, { useCallback, useContext, useEffect, useReducer } from 'react';
 import PropTypes from 'prop-types';
 import { getLogger } from '../core';
 import { VisitProps } from './VisitProps';
-import { createVisit, getListNoPersons, getVisits, newWebSocket, updateVisit } from './VisitApi';
+import { checkServer, createVisit, getListNoPersons, getVisits, newWebSocket, updateVisit } from './VisitApi';
 import { AuthContext } from '../auth';
 import { Plugins } from '@capacitor/core';
+import { useNetworkStatus } from '../core/useNetworkStatus';
 
 
 const log = getLogger('ItemProvider');
 
-type SaveVisitFn = (visit: VisitProps) => Promise<any>;
+type SaveVisitFn = (visit: VisitProps, syncing: boolean) => Promise<any>;
 type GetVisitsFn = (visits: VisitProps[]) => Promise<any>;
 type GetFilteredVisitsFn = (filter: number, isSelected: boolean) => void;
 
@@ -27,7 +28,7 @@ export interface VisitState {
   selection: number,
   isSelected: boolean
   onSelection?: GetFilteredVisitsFn,
-  serverConnection: boolean
+  serverConnection: boolean,
 }
 
 interface ActionProps {
@@ -44,11 +45,11 @@ const initialState: VisitState = {
   noPersonsList: [],
   selection: 0,
   isSelected: false,
-  serverConnection: true
+  serverConnection: true,
 };
 
 const { Storage } = Plugins
-const VISITS_COUNT = 8; // TO  MODIFY
+const VISITS_COUNT = 8; 
 const FETCH_VISITS_STARTED = 'FETCH_VISITS_STARTED';
 const FETCH_VISITS_SUCCEEDED = 'FETCH_VISITS_SUCCEEDED';
 const FETCH_VISITS_FAILED = 'FETCH_VISITS_FAILED';
@@ -60,7 +61,7 @@ const UPDATE_SELECTION = 'UPDATE_SELECTION';
 const UPDATE_IS_SELECTED = 'UPDATE_IS_SELECTED';
 const FETCH_LIST_NO_PERSONS = 'FETCH_LIST_NO_PERSONS';
 const CLEAR_SELECTION_VISITS = 'CLEAR_SELECTION_VISITS';
-const UPDATE_SERVER_CONNECTION = 'UPDATE_SERVER_CONNECTION'
+const UPDATE_SERVER_CONNECTION = 'UPDATE_SERVER_CONNECTION';
 
 
 const reducer: (state: VisitState, action: ActionProps) => VisitState =
@@ -69,6 +70,9 @@ const reducer: (state: VisitState, action: ActionProps) => VisitState =
       case FETCH_VISITS_STARTED:
         return { ...state, fetching: true, fetchingError: null };
       case FETCH_VISITS_SUCCEEDED:
+        let pag = payload.page
+        let totalPags = payload.totalPages
+        
         if (payload.page && payload.totalPages !== -1) {
           const updatedVisits = [ ...state.visits, ...payload.visits ]
           Storage.set({
@@ -77,7 +81,7 @@ const reducer: (state: VisitState, action: ActionProps) => VisitState =
           })
           return { ...state, visits: updatedVisits, fetching: false, page: payload.page, totalPages: payload.totalPages };
         }
-        return { ...state, visits: payload.visits, fetching: false, page: payload.page, totalPages: payload.totalPages };
+        return { ...state, visits: payload.visits, fetching: false };
       case FETCH_VISITS_FAILED:
         return { ...state, fetchingError: payload.error, fetching: false };
       case SAVE_VISIT_STARTED:
@@ -87,9 +91,19 @@ const reducer: (state: VisitState, action: ActionProps) => VisitState =
         const visit = payload.visit;
         const index = visits.findIndex(it => it._id === visit._id);
         if (index === -1 && visit._id !== undefined) {
-          visits.splice(visits.length, 0, visit);
+          // if (payload.offline) {
+            if (!payload.syncing) {
+              visits.splice(visits.length, 0, visit);
+            }
+          // }
         } else {
           visits[index] = visit;
+        }
+        if (payload.offline) {
+          Storage.set({
+            key: "visits",
+            value: JSON.stringify(visits)
+          })
         }
         return { ...state, visits: visits, saving: false };
       case SAVE_VISIT_FAILED:
@@ -124,6 +138,7 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
   
   const { token } = useContext(AuthContext);
   const [state, dispatch] = useReducer(reducer, initialState);
+  const { networkStatus } = useNetworkStatus()
   
   const { visits, fetching, fetchingError,
     saving, savingError,
@@ -132,10 +147,10 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
     serverConnection 
   } = state;
 
-  log(state)
-
+  useEffect(checkServerEffect, [token])
+  useEffect(synchronizeEffect, [token, serverConnection]);
   useEffect(getVisitsEffect, [token, page, selection]);
-  useEffect(getListNoPersonsEffect, [token]);
+  useEffect(getListNoPersonsEffect, [token, visits]);
   useEffect(wsEffect, [token]);
 
   const loadFilteredVisitsCallback = (filter: number, sel: boolean) => {
@@ -155,7 +170,6 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
     saving, savingError, saveVisit,
     page, totalPages, loadMore,
     noPersonsList, selection, isSelected, onSelection, 
-    
     serverConnection
   };
 
@@ -165,6 +179,53 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
       {children}
     </VisitContext.Provider>
   );
+ 
+  function checkServerEffect() {
+    if (token) {
+      // checkServerStatus()
+      delay(2000);
+    }
+    return () => {}
+
+    async function delay(ms: number) {
+      // return await for better async stack trace support in case of errors.
+      return await new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function checkServerStatus() {
+      setInterval(function() {
+        const res = checkServer(token).then(res => {return res})
+        let s = res.then(r => {return r})
+        console.log(s)
+      }, 5000);
+    }
+  }
+
+  function synchronizeEffect() {
+    if (serverConnection && token && networkStatus.connected) {
+      synchronizeVisits()
+    }
+    return () => {}
+
+    async function synchronizeVisits() {
+      const res = await Storage.get({key: "newLocalVisits"})
+      if (res.value) {
+        const newLocalVisits = JSON.parse(res.value)
+        saveVisits(newLocalVisits)
+      }
+    }
+
+    function saveVisits(newLocalVisits: VisitProps[]) {
+      newLocalVisits.forEach(element => {
+        if (element._id && element._id < 0) {
+          delete element._id
+        }
+        saveVisit(element, true)
+      })
+      Storage.remove({key:"newLocalVisits"})
+      log('removed newLocalVisits')
+    }
+  }
 
 
   function getListNoPersonsEffect() {
@@ -231,22 +292,76 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
     }
   }
 
-  async function saveVisitCallback(visit: VisitProps) {
+  async function saveVisitCallback(visit: VisitProps, syncing: boolean) {
     try {
-      log('saveVisit started');
       dispatch({ type: SAVE_VISIT_STARTED });
+      log('saveVisit started');
       const savedVisit = await (visit._id ? updateVisit(token, visit) : createVisit(token, visit));
-      log('saveVisit succeeded');
-      dispatch({ type: SAVE_VISIT_SUCCEEDED, payload: { visit: savedVisit } });
+      dispatch({ type: UPDATE_SERVER_CONNECTION, payload: { serverConnection: true } })
+      log('saveVisit succeeded on server');
+      
+      /*
+      const res = await Storage.get({ key: 'newLocalVisits' })
+      if (res.value) {
+        let localVisits1: VisitProps[]
+        localVisits1 = JSON.parse(res.value)
+        const index = localVisits1.findIndex(it => it._id === visit._id);
+        localVisits1.splice(index, 1)
+        Storage.set({
+          key: "newLocalVisits",
+          value: JSON.stringify(localVisits1)
+        })
+      }
+      */
+
+      dispatch({ type: SAVE_VISIT_SUCCEEDED, payload: { visit: savedVisit, syncing: syncing } });
+  
     } catch (error) {
-      log('saveVisit failed');
-      dispatch({ type: SAVE_VISIT_FAILED, payload: { error } });
+      if (error.message === 'Network Error') {
+        log('saveVisit on server failed');
+
+        dispatch({ type: UPDATE_SERVER_CONNECTION, payload:{ serverConnection: false} })
+        //saveVisit(visit, false)
+
+        log('saveVisit locally');
+        const res = await Storage.get({ key: 'newLocalVisits' })
+        
+        if (res.value) {
+          const localVisits = JSON.parse(res.value)
+          if (!visit._id) {
+            visit._id = (parseInt(localVisits[localVisits.length - 1]._id) - 1)
+          }
+          localVisits.splice(localVisits.length, 0, visit)
+          Storage.set({
+            key: "newLocalVisits",
+            value: JSON.stringify(localVisits)
+          })
+          dispatch({ type: SAVE_VISIT_SUCCEEDED, payload: { visit: visit, offline: true } });
+          log('saveVisit succeeded locally')
+        } else {
+          if (!visit._id) {
+            visit._id = -1
+          }
+          const newVisits = [visit]
+          Storage.set({
+            key: "newLocalVisits",
+            value: JSON.stringify(newVisits)
+          })
+          dispatch({ type: SAVE_VISIT_SUCCEEDED, payload: { visit: visit, offline: true } });
+          log('saveVisit succeeded locally')
+        }
+      }
+      else {
+        log('saveVisit failed');
+        dispatch({ type: SAVE_VISIT_FAILED, payload: { error } });
+      }
     }
   }
 
   async function loadMoreVisitsCallback() {
     log(`page - ${page} / ${totalPages}`)
-    if (page < totalPages) {
+    if (page < totalPages && networkStatus.connected) {
+      console.log('aici')
       dispatch({ type: UPDATE_PAGE, payload: { page: page + 1 } });
     }
   }
