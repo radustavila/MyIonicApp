@@ -29,6 +29,7 @@ export interface VisitState {
   isSelected: boolean
   onSelection?: GetFilteredVisitsFn,
   serverConnection: boolean,
+  synchronized: boolean
 }
 
 interface ActionProps {
@@ -46,6 +47,7 @@ const initialState: VisitState = {
   selection: 0,
   isSelected: false,
   serverConnection: true,
+  synchronized: false
 };
 
 const { Storage } = Plugins
@@ -62,6 +64,7 @@ const UPDATE_IS_SELECTED = 'UPDATE_IS_SELECTED';
 const FETCH_LIST_NO_PERSONS = 'FETCH_LIST_NO_PERSONS';
 const CLEAR_SELECTION_VISITS = 'CLEAR_SELECTION_VISITS';
 const UPDATE_SERVER_CONNECTION = 'UPDATE_SERVER_CONNECTION';
+const UPDATE_SYNCHRONIZED = 'UPDATE_SYNCHRONIZED';
 
 
 const reducer: (state: VisitState, action: ActionProps) => VisitState =
@@ -70,11 +73,11 @@ const reducer: (state: VisitState, action: ActionProps) => VisitState =
       case FETCH_VISITS_STARTED:
         return { ...state, fetching: true, fetchingError: null };
       case FETCH_VISITS_SUCCEEDED:
-        let pag = payload.page
-        let totalPags = payload.totalPages
         
         if (payload.page && payload.totalPages !== -1) {
-          const updatedVisits = [ ...state.visits, ...payload.visits ]
+          const nextVisits = payload.visits
+          const newe = sliceVisits(nextVisits)
+          const updatedVisits = [ ...state.visits, ...newe ]
           Storage.set({
             key: 'visits',
             value: JSON.stringify(updatedVisits)
@@ -91,11 +94,9 @@ const reducer: (state: VisitState, action: ActionProps) => VisitState =
         const visit = payload.visit;
         const index = visits.findIndex(it => it._id === visit._id);
         if (index === -1 && visit._id !== undefined) {
-          // if (payload.offline) {
             if (!payload.syncing) {
-              visits.splice(visits.length, 0, visit);
+              visits.splice(0, 0, visit);
             }
-          // }
         } else {
           visits[index] = visit;
         }
@@ -123,8 +124,16 @@ const reducer: (state: VisitState, action: ActionProps) => VisitState =
         return { ...state, isSelected: false, filter: payload.filter }
       case UPDATE_SERVER_CONNECTION:
         return { ...state, serverConnection: payload.serverConnection }
+      case UPDATE_SYNCHRONIZED:
+        return { ...state, synchronized: payload.synchronized}
       default:
         return state;
+    }
+
+    function sliceVisits(visits: VisitProps[]): VisitProps[] {
+      const res = visits.filter(visit => state.visits.findIndex(it => it._id === visit._id) === -1)
+      console.log(res)
+      return res
     }
   };
 
@@ -144,11 +153,10 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
     saving, savingError,
     page, totalPages, 
     noPersonsList, selection, isSelected,
-    serverConnection 
+    serverConnection, synchronized
   } = state;
 
   useEffect(checkServerEffect, [token])
-  useEffect(synchronizeEffect, [token, serverConnection]);
   useEffect(getVisitsEffect, [token, page, selection]);
   useEffect(getListNoPersonsEffect, [token, visits]);
   useEffect(wsEffect, [token]);
@@ -170,9 +178,11 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
     saving, savingError, saveVisit,
     page, totalPages, loadMore,
     noPersonsList, selection, isSelected, onSelection, 
-    serverConnection
+    serverConnection, synchronized
   };
 
+
+  
   log('returns');
   return (
     <VisitContext.Provider value={value}>
@@ -182,31 +192,11 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
  
   function checkServerEffect() {
     if (token) {
-      // checkServerStatus()
-      delay(2000);
+      checkServerStatus()
     }
     return () => {}
 
-    async function delay(ms: number) {
-      // return await for better async stack trace support in case of errors.
-      return await new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    async function checkServerStatus() {
-      setInterval(function() {
-        const res = checkServer(token).then(res => {return res})
-        let s = res.then(r => {return r})
-        console.log(s)
-      }, 5000);
-    }
-  }
-
-  function synchronizeEffect() {
-    if (serverConnection && token && networkStatus.connected) {
-      synchronizeVisits()
-    }
-    return () => {}
-
+    
     async function synchronizeVisits() {
       const res = await Storage.get({key: "newLocalVisits"})
       if (res.value) {
@@ -217,13 +207,32 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
 
     function saveVisits(newLocalVisits: VisitProps[]) {
       newLocalVisits.forEach(element => {
-        if (element._id && element._id < 0) {
+        if (element._id && !Number.isNaN(Number(element._id))) {
           delete element._id
         }
         saveVisit(element, true)
       })
+      dispatch({type: UPDATE_SYNCHRONIZED, payload: { synchronized: true }})
       Storage.remove({key:"newLocalVisits"})
       log('removed newLocalVisits')
+    }
+
+
+    async function checkServerStatus() {
+      setInterval(async () => {
+        try {
+          await checkServer(token)
+          if (serverConnection) {
+            synchronizeVisits()
+            dispatch({type: UPDATE_SERVER_CONNECTION, payload: { serverConnection: true }})
+          }
+        }
+        catch (err) {
+          if (serverConnection) {
+            dispatch({type: UPDATE_SERVER_CONNECTION, payload: { serverConnection: false }})
+          }
+        }
+      }, 3000);
     }
   }
 
@@ -321,15 +330,17 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
         log('saveVisit on server failed');
 
         dispatch({ type: UPDATE_SERVER_CONNECTION, payload:{ serverConnection: false} })
-        //saveVisit(visit, false)
-
+        if (synchronized) {
+          dispatch({type: UPDATE_SYNCHRONIZED, payload: { synchronized: false }})
+        }
+        
         log('saveVisit locally');
         const res = await Storage.get({ key: 'newLocalVisits' })
         
         if (res.value) {
           const localVisits = JSON.parse(res.value)
           if (!visit._id) {
-            visit._id = (parseInt(localVisits[localVisits.length - 1]._id) - 1)
+            visit._id = (parseInt(localVisits[localVisits.length - 1]._id) + 1).toString()
           }
           localVisits.splice(localVisits.length, 0, visit)
           Storage.set({
@@ -340,7 +351,7 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
           log('saveVisit succeeded locally')
         } else {
           if (!visit._id) {
-            visit._id = -1
+            visit._id = "0"
           }
           const newVisits = [visit]
           Storage.set({

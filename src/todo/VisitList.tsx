@@ -19,7 +19,7 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
     const { visits, fetching, fetchingError, 
         loadMore, noPersonsList, onSelection, 
         isSelected, 
-        serverConnection 
+        serverConnection, synchronized
     } = useContext(VisitContext)
     const [ searchVisitByPlace, setSearchVisitByPlace ] = useState<string>('');
 
@@ -65,6 +65,12 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
                     isOpen={!serverConnection ? true : false}
                     cssClass="my-toast"
                     message='There is no connection to the server! Work will be saved locally.'
+                    duration={5000}
+                />
+                <IonToast
+                    isOpen={synchronized ? true : false}
+                    cssClass="my-toast"
+                    message='Connection is ON. Work saved on server successfully.'
                     duration={5000}
                 />
                 <IonSearchbar

@@ -27,7 +27,7 @@ export const getListNoPersons: (token: string) => Promise<number[]> = (token) =>
 }
 
 export const createVisit: (token: string, visit: VisitProps) => Promise<VisitProps[]> = (token, visit) => {
-    return withLogs(axios.post(visitUrl, visit, authConfig(token)), 'createVisit')
+    return withLogs(axios.post(`${visitUrl}`, visit, authConfig(token)), 'createVisit')
 }
 
 export const updateVisit: (token: string, visit: VisitProps) => Promise<VisitProps[]> = (token, visit) => {
@@ -35,7 +35,6 @@ export const updateVisit: (token: string, visit: VisitProps) => Promise<VisitPro
 }
 
 export const checkServer: (token: string) => Promise<any> = (token) => {
-    console.log('TOKEN: ' + token)
     return withLogs(axios.get(`${visitUrl}/check-server`, authConfig(token)), 'check server').then(res => {return res})
 }
 
