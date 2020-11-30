@@ -156,7 +156,7 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
     serverConnection, synchronized
   } = state;
 
-  useEffect(checkServerEffect, [token])
+  // useEffect(checkServerEffect, [token])
   useEffect(getVisitsEffect, [token, page, selection]);
   useEffect(getListNoPersonsEffect, [token, visits]);
   useEffect(wsEffect, [token]);
@@ -232,7 +232,7 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
             dispatch({type: UPDATE_SERVER_CONNECTION, payload: { serverConnection: false }})
           }
         }
-      }, 3000);
+      }, 50000);
     }
   }
 
@@ -248,6 +248,7 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
       if (!token?.trim()) {
         return;
       }
+      console.log(visits)
       try {
         log('fetch list noPersons started')
         const noPersonsList = await getListNoPersons(token);
