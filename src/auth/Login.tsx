@@ -4,6 +4,7 @@ import { RouteComponentProps } from 'react-router';
 import { IonButton, IonContent, IonHeader, IonInput, IonLoading, IonPage, IonTitle, IonToolbar } from '@ionic/react';
 import { AuthContext } from './AuthProvider';
 import { getLogger } from '../core';
+import './Styles.css'
 
 
 const log = getLogger('Login')
@@ -33,7 +34,7 @@ export const Login: React.FC<RouteComponentProps> = ({ history }) => {
                     <IonTitle>Login</IonTitle>
                 </IonToolbar>
             </IonHeader>
-            <IonContent>
+            <IonContent className="container">
                 <IonInput 
                     placeholder = "Username"
                     value = { username }
@@ -51,7 +52,7 @@ export const Login: React.FC<RouteComponentProps> = ({ history }) => {
                     })}/>
                 <IonLoading isOpen = { isAuthenticating }/>
                 {authenticationError && (
-                    <div>{authenticationError.message || 'Failed to authenticate'}</div>
+                    <div>{'Failed to authenticate'}</div>
                 )}
                 <IonButton onClick = { handleLogin }>Login</IonButton>
             </IonContent>

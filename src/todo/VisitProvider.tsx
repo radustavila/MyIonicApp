@@ -22,7 +22,7 @@ export interface VisitState {
   savingError?: Error | null
   saveVisit?: SaveVisitFn
   page: number
-  totalPages: number
+  finalPage: boolean
   loadMore?: GetVisitsFn,
   noPersonsList: number[],
   selection: number,
@@ -42,7 +42,7 @@ const initialState: VisitState = {
   fetching: false,
   saving: false,
   page: 1,
-  totalPages: 1,
+  finalPage: false,
   noPersonsList: [],
   selection: 0,
   isSelected: false,
@@ -51,7 +51,7 @@ const initialState: VisitState = {
 };
 
 const { Storage } = Plugins
-const VISITS_COUNT = 8; 
+const VISITS_LIMIT = 8; 
 const FETCH_VISITS_STARTED = 'FETCH_VISITS_STARTED';
 const FETCH_VISITS_SUCCEEDED = 'FETCH_VISITS_SUCCEEDED';
 const FETCH_VISITS_FAILED = 'FETCH_VISITS_FAILED';
@@ -65,6 +65,7 @@ const FETCH_LIST_NO_PERSONS = 'FETCH_LIST_NO_PERSONS';
 const CLEAR_SELECTION_VISITS = 'CLEAR_SELECTION_VISITS';
 const UPDATE_SERVER_CONNECTION = 'UPDATE_SERVER_CONNECTION';
 const UPDATE_SYNCHRONIZED = 'UPDATE_SYNCHRONIZED';
+const UPDATE_FINAL_PAGE = 'UPDATE_FINAL_PAGE';
 
 
 const reducer: (state: VisitState, action: ActionProps) => VisitState =
@@ -73,8 +74,7 @@ const reducer: (state: VisitState, action: ActionProps) => VisitState =
       case FETCH_VISITS_STARTED:
         return { ...state, fetching: true, fetchingError: null };
       case FETCH_VISITS_SUCCEEDED:
-        
-        if (payload.page && payload.totalPages !== -1) {
+        if (payload.page && payload.filter === 0) {
           const nextVisits = payload.visits
           const newe = sliceVisits(nextVisits)
           const updatedVisits = [ ...state.visits, ...newe ]
@@ -82,7 +82,7 @@ const reducer: (state: VisitState, action: ActionProps) => VisitState =
             key: 'visits',
             value: JSON.stringify(updatedVisits)
           })
-          return { ...state, visits: updatedVisits, fetching: false, page: payload.page, totalPages: payload.totalPages };
+          return { ...state, visits: updatedVisits, fetching: false, page: payload.page };
         }
         return { ...state, visits: payload.visits, fetching: false };
       case FETCH_VISITS_FAILED:
@@ -126,13 +126,14 @@ const reducer: (state: VisitState, action: ActionProps) => VisitState =
         return { ...state, serverConnection: payload.serverConnection }
       case UPDATE_SYNCHRONIZED:
         return { ...state, synchronized: payload.synchronized}
+      case UPDATE_FINAL_PAGE: 
+        return { ...state, finalPage: payload.finalPage }
       default:
         return state;
     }
 
     function sliceVisits(visits: VisitProps[]): VisitProps[] {
       const res = visits.filter(visit => state.visits.findIndex(it => it._id === visit._id) === -1)
-      console.log(res)
       return res
     }
   };
@@ -151,14 +152,14 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
   
   const { visits, fetching, fetchingError,
     saving, savingError,
-    page, totalPages, 
+    page, finalPage,  
     noPersonsList, selection, isSelected,
     serverConnection, synchronized
   } = state;
 
-  // useEffect(checkServerEffect, [token])
+  useEffect(checkServerEffect, [token])
   useEffect(getVisitsEffect, [token, page, selection]);
-  useEffect(getListNoPersonsEffect, [token, visits]);
+  useEffect(getListNoPersonsEffect, [visits]);
   useEffect(wsEffect, [token]);
 
   const loadFilteredVisitsCallback = (filter: number, sel: boolean) => {
@@ -170,13 +171,13 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
   }
 
   const saveVisit = useCallback<SaveVisitFn>(saveVisitCallback, [token]);
-  const loadMore = useCallback<GetVisitsFn>(loadMoreVisitsCallback, [token, page, totalPages]);
+  const loadMore = useCallback<GetVisitsFn>(loadMoreVisitsCallback, [token, page]);
   const onSelection = useCallback<GetFilteredVisitsFn>(loadFilteredVisitsCallback, [token])
 
   const value = {
     visits, fetching, fetchingError,
     saving, savingError, saveVisit,
-    page, totalPages, loadMore,
+    page, finalPage, loadMore,
     noPersonsList, selection, isSelected, onSelection, 
     serverConnection, synchronized
   };
@@ -232,7 +233,7 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
             dispatch({type: UPDATE_SERVER_CONNECTION, payload: { serverConnection: false }})
           }
         }
-      }, 50000);
+      }, 10000);
     }
   }
 
@@ -248,16 +249,37 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
       if (!token?.trim()) {
         return;
       }
-      console.log(visits)
       try {
         log('fetch list noPersons started')
-        const noPersonsList = await getListNoPersons(token);
+
+        const res = await Storage.get({ key: 'lastUpdated' })
+        let lastUpdated = ''
+        if (res.value) {
+           lastUpdated = JSON.parse(res.value)
+        }
+        const noPersonsList = await getListNoPersons(token, lastUpdated);
+        
+        await Storage.set({
+          key: 'noPersonsList',
+          value: JSON.stringify(noPersonsList)
+        })
+
         log('fetch noPersons succeeded')
         if (!canceled) {
           dispatch({ type: FETCH_LIST_NO_PERSONS, payload: { noPersonsList } })
         }
       } catch (error) {
-        log('fetch noPersonsList failed')
+        log('fetch noPersonsList failed from server')
+        if (!canceled) {
+
+          const res = await Storage.get({ key: 'noPersonsList' })
+          if (res.value) {
+            const noPersonsList = JSON.parse(res.value)
+
+            dispatch({ type: FETCH_LIST_NO_PERSONS, payload: { noPersonsList } })
+            log('fetch noPersons succeeded from local')
+          }
+        }
       }
     }
   }
@@ -275,12 +297,21 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
       }
       try {
         log('fetchVisits started');
+
         dispatch({ type: FETCH_VISITS_STARTED });
-        const res = await getVisits(token, page, VISITS_COUNT, selection);
+        const res = await Storage.get({ key: 'lastUpdated' })
+        let lastUpdated = ''
+        if (res.value) {
+           lastUpdated = JSON.parse(res.value)
+        }
+        const visits = await getVisits(token, page, VISITS_LIMIT, selection, lastUpdated);
+        console.log(visits)
+        console.log(visits.length < VISITS_LIMIT ? true : false)
         log('fetchVisits succeeded');
+        dispatch({ type: UPDATE_FINAL_PAGE, payload: { finalPage: visits.length < VISITS_LIMIT ? true : false } })
         dispatch({ type: UPDATE_SERVER_CONNECTION, payload: { serverConnection: true } })
         if (!canceled) {
-          dispatch({ type: FETCH_VISITS_SUCCEEDED, payload: { visits: res.visits, page, totalPages: res.totalPages } });    
+          dispatch({ type: FETCH_VISITS_SUCCEEDED, payload: { visits, page, filter: selection } });    
         }
       } catch (error) {
         log('fetchVisits from server failed');
@@ -371,9 +402,8 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
   }
 
   async function loadMoreVisitsCallback() {
-    log(`page - ${page} / ${totalPages}`)
-    if (page < totalPages && networkStatus.connected) {
-      console.log('aici')
+    console.log(page + ' ' + finalPage)
+    if (!finalPage) {
       dispatch({ type: UPDATE_PAGE, payload: { page: page + 1 } });
     }
   }

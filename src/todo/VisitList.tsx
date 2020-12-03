@@ -24,8 +24,7 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
     const [ searchVisitByPlace, setSearchVisitByPlace ] = useState<string>('');
 
     const handleLogout = () => {
-        Storage.remove({ key: 'user' })
-        Storage.remove({ key: 'visits'})
+        Storage.clear()
         log("LOGOUT")
         window.location.reload()
     }
