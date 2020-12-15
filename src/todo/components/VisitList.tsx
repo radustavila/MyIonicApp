@@ -2,12 +2,12 @@ import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, Ion
 import { add, wifi } from "ionicons/icons";
 import React, { useContext, useState } from "react";
 import { RouteComponentProps } from "react-router";
-import { getLogger } from "../core";
-import { VisitContext } from "./VisitProvider";
-import Visit from "./Visit";
+import { getLogger } from "../../core";
+import { VisitContext } from "../VisitProvider";
+import Visit from "../props/Visit";
 import { Plugins } from "@capacitor/core";
-import './Styles.css'
-import { useNetworkStatus } from "../core/useNetworkStatus";
+import { useNetworkStatus } from "../../core/useNetworkStatus";
+import './Style.css';
 
 
 const log = getLogger('VisitList')

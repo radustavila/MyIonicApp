@@ -10,10 +10,12 @@ import {
   IonTitle,
   IonToolbar, IonLabel, IonItem, IonToast
 } from '@ionic/react';
-import { getLogger } from '../core';
-import { VisitContext } from './VisitProvider';
+import { getLogger } from '../../core';
+import { VisitContext } from '../VisitProvider';
 import { RouteComponentProps } from 'react-router';
-import { VisitProps } from './VisitProps';
+import { VisitProps } from '../props/VisitProps';
+import { useMyLocation } from '../../core/useMyLocation';
+import { MyMap } from './MyMap';
 
 const log = getLogger('ItemEdit');
 
@@ -27,6 +29,10 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
   const [noPersons1, setNoPersons] = useState('')
   const [visit, setVisit] = useState<VisitProps>();
   const [ numberError, setNumberError ] = useState<string | undefined>()
+  
+  const myLocation = useMyLocation();
+  const { latitude: lat, longitude: lng } = myLocation.position?.coords || {}
+  
   
   useEffect(() => {
     log('useEffect');
@@ -73,6 +79,18 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
         <IonItem>
           <IonLabel>NoPersons: </IonLabel>
           <IonInput value={ noPersons1 } onIonChange={e => setNoPersons(e.detail.value || '')} />
+        </IonItem>
+        <IonItem>
+          <div>My Location is</div>
+          <div>latitude: {lat}</div>
+          <div>longitude: {lng}</div>
+          {lat && lng &&
+            <MyMap
+              lat={lat}
+              lng={lng}
+              onMapClick={log('onMap')}
+              onMarkerClick={log('onMarker')}
+            />}
         </IonItem>
         <IonToast
           isOpen={numberError ? true : false}

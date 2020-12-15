@@ -1,8 +1,8 @@
 import React, { useCallback, useContext, useEffect, useReducer } from 'react';
 import PropTypes from 'prop-types';
 import { getLogger } from '../core';
-import { VisitProps } from './VisitProps';
-import { checkServer, createVisit, getListNoPersons, getVisits, newWebSocket, updateVisit } from './VisitApi';
+import { VisitProps } from './props/VisitProps';
+import { checkServer, createVisit, getListNoPersons, getVisits, newWebSocket, updateVisit } from './api/VisitApi';
 import { AuthContext } from '../auth';
 import { Plugins } from '@capacitor/core';
 import { useNetworkStatus } from '../core/useNetworkStatus';

@@ -22,8 +22,8 @@ import '@ionic/react/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 import { VisitProvider } from './todo/VisitProvider';
-import VisitList from './todo/VisitList';
-import VisitEdit from './todo/VisitEdit';
+import VisitList from './todo/components/VisitList';
+import VisitEdit from './todo/components/VisitEdit';
 import { AuthProvider, Login, PrivateRoute } from './auth';
 
 const App: React.FC = () => (

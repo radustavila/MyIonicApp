@@ -1,6 +1,6 @@
 import axios from 'axios'
-import { authConfig, baseUrl, getLogger, withLogs } from '../core';
-import { VisitProps } from './VisitProps'
+import { authConfig, baseUrl, getLogger, withLogs } from '../../core';
+import { VisitProps } from '../props/VisitProps'
 
 
 const log = getLogger('visitApi')
