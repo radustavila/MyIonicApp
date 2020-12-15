@@ -81,9 +81,6 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
           <IonInput value={ noPersons1 } onIonChange={e => setNoPersons(e.detail.value || '')} />
         </IonItem>
         <IonItem>
-          <div>My Location is</div>
-          <div>latitude: {lat}</div>
-          <div>longitude: {lng}</div>
           {lat && lng &&
             <MyMap
               lat={lat}

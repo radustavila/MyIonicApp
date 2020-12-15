@@ -17,23 +17,22 @@ export const MyMap =
       googleMapURL:
         `https://maps.googleapis.com/maps/api/js?key=${mapsApiKey}&v=3.exp&libraries=geometry,drawing,places`,
       loadingElement: <div style={{ height: `100%` }} />,
-      containerElement: <div style={{ height: `400px` }} />,
+      containerElement: <div style={{ height: `400px`, width: `400px` }} />,
       mapElement: <div style={{ height: `100%` }} />
     }),
     withScriptjs,
     withGoogleMap
   )(props => (
     <GoogleMap
-      defaultZoom={8}
-      defaultCenter={{ lat: 50, lng: 50 }}
+      defaultZoom={13}
+      defaultCenter={{ lat: props.lat, lng: props.lng }}
       onClick={props.onMapClick}
     >
       <Marker
-        position={{ lat: 50, lng: 50 }}
+        position={{ lat: props.lat, lng: props.lng }}
         onClick={props.onMarkerClick}
       />
     </GoogleMap>
   ))
-
 
 
