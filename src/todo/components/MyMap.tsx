@@ -3,8 +3,8 @@ import { withScriptjs, withGoogleMap, GoogleMap, Marker } from 'react-google-map
 import { compose, withProps } from 'recompose';
 
 interface MyMapProps {
-  lat?: number;
-  lng?: number;
+  lat: number;
+  lng: number;
   onMapClick: (e: any) => void,
   onMarkerClick: (e: any) => void,
 }
