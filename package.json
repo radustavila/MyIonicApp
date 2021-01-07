@@ -55,7 +55,8 @@
     ]
   },
   "devDependencies": {
-    "@capacitor/cli": "2.4.2"
+    "@capacitor/cli": "2.4.2",
+    "@types/google-maps": "^3.2.2"
   },
   "description": "An Ionic project"
 }

@@ -30,9 +30,11 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
   const [visit, setVisit] = useState<VisitProps>();
   const [ numberError, setNumberError ] = useState<string | undefined>()
   
-  const myLocation = useMyLocation();
-  const { latitude: lat, longitude: lng } = myLocation.position?.coords || {}
+  // const myLocation = useMyLocation();
+  // const { latitude: lat, longitude: lng } = myLocation.position?.coords || {}
   
+  const [ latitude, setLatitude ] = useState(46.538666299999996);
+  const [ longitude, setLongitude ] = useState(24.565142800000004);
   
   useEffect(() => {
     log('useEffect');
@@ -43,6 +45,10 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
     if (visit) {
       setPlace(visit.placeName)
       setNoPersons(visit.noPersons.toString())
+      if (visit.latitude && visit.longitude) {
+        setLatitude(visit.latitude);
+        setLongitude(visit.longitude);
+      }
     }
   }, [match.params.id, visits]);
   const handleSave = () => {
@@ -53,10 +59,15 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
     }
     else {
       const date = new Date().toISOString().slice(0, -1)
-      const editedVisit = visit ? { ...visit, placeName, noPersons } : { placeName, noPersons, date };
+      const editedVisit = visit ? { ...visit, placeName, noPersons, latitude, longitude } : { placeName, noPersons, date, latitude, longitude };
       saveVisit && saveVisit(editedVisit, false).then(() => history.goBack());
     }
   };
+  
+  const setMapPosition = (e: any) => {
+    setLatitude(e.latLng.lat());
+    setLongitude(e.latLng.lng());
+  }
 
   log('render');
   return (
@@ -81,12 +92,12 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
           <IonInput value={ noPersons1 } onIonChange={e => setNoPersons(e.detail.value || '')} />
         </IonItem>
         <IonItem>
-          {lat && lng &&
+          {latitude && longitude &&
             <MyMap
-              lat={lat}
-              lng={lng}
-              onMapClick={log('onMap')}
-              onMarkerClick={log('onMarker')}
+              lat={latitude}
+              lng={longitude}
+              onMapClick={setMapPosition}
+              onMarkerClick={log('onMarker: ' + latitude + " - " + longitude)}
             />}
         </IonItem>
         <IonToast

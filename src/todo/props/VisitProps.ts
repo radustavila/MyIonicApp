@@ -3,4 +3,6 @@ export interface VisitProps {
     placeName: string
     date: string
     noPersons: number
+    latitude: number
+    longitude: number
 }

@@ -32,6 +32,7 @@ export const MyMap =
         position={{ lat: props.lat, lng: props.lng }}
         onClick={props.onMarkerClick}
       />
+      
     </GoogleMap>
   ))
 

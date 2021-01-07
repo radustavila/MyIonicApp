@@ -94,12 +94,14 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
                     <IonList>
                         { visits
                             .filter(visit => visit.placeName.indexOf(searchVisitByPlace) >= 0)   
-                            .map(({ _id, placeName, noPersons, date }) => 
+                            .map(({ _id, placeName, noPersons, date, latitude, longitude }) => 
                         <Visit key={_id} 
                             _id={_id} 
                             placeName={placeName} 
                             noPersons={noPersons} 
                             date={date} 
+                            latitude={latitude}
+                            longitude={longitude}
                             onEdit={_id => history.push(`/visit/${_id}`)} 
                         /> )}
                         
