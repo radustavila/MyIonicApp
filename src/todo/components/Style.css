@@ -19,3 +19,7 @@ ion-select::part(text) {
 .my-toast {
     text-align: center;
 }
+
+.square-a {
+    font-size: xx-large;
+}

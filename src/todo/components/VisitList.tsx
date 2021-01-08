@@ -1,6 +1,6 @@
-import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonLoading, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToast, IonToolbar } from "@ionic/react";
+import { createAnimation, IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonLoading, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToast, IonToolbar } from "@ionic/react";
 import { add, wifi } from "ionicons/icons";
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { RouteComponentProps } from "react-router";
 import { getLogger } from "../../core";
 import { VisitContext } from "../VisitProvider";
@@ -45,6 +45,8 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
         loadMore && loadMore(visits);
         ($event.target as HTMLIonInfiniteScrollElement).complete();
     }
+    useEffect(chainAnimation, [])
+
 
     log('render')
     return (
@@ -95,7 +97,7 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
                 </IonButton>
 
                 { visits && (
-                    <IonList>
+                    <IonList className="item">
                         { visits
                             .filter(visit => visit.placeName.indexOf(searchVisitByPlace) >= 0)   
                             .map(({ _id, placeName, noPersons, date, latitude, longitude }) => 
@@ -128,6 +130,42 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
             </IonContent>
         </IonPage>
     )
+
+    
+  function chainAnimation() {
+    const el1 = document.querySelector('.item');
+    const el2 = document.querySelector('.item');
+    if (el1 && el2) {
+      const animation1 = createAnimation()
+          .addElement(el1)
+          .fill('none')
+          .duration(2000)
+          .iterations(1)
+          .keyframes([
+            { offset: 0, background: 'red' },
+            { offset: 0.72, background: 'var(--background)' },
+            { offset: 1, background: 'green' }
+          ]);
+
+      const animation2 = createAnimation()
+          .addElement(el2)
+          .fill('none')
+          .duration(1000)
+          .direction('alternate')
+          .iterations(1)
+          .keyframes([
+            { offset: 0, transform: 'scale(0)', opacity: 1 },
+            { offset: 0.5, transform: 'scale(1.1)', opacity: 0.3 },
+            { offset: 1, transform: 'scale(1)', opacity: 1 }
+          ]);
+
+      (async () => {
+        await animation2.play();
+        await animation1.play();
+      })();
+    }
+  }
+
 }
 
 export default VisitList

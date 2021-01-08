@@ -8,7 +8,7 @@ import {
   IonLoading,
   IonPage,
   IonTitle,
-  IonToolbar, IonLabel, IonItem, IonToast, IonGrid, IonRow, IonCol, IonImg, IonFab, IonFabButton, IonIcon, IonActionSheet
+  IonToolbar, IonLabel, IonItem, IonToast, IonGrid, IonRow, IonCol, IonImg, IonFab, IonFabButton, IonIcon, IonActionSheet, createAnimation
 } from '@ionic/react';
 import { getLogger } from '../../core';
 import { VisitContext } from '../VisitProvider';
@@ -35,6 +35,9 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
   const { photos, takePhoto, deletePhoto } = usePhotoGallery();
   const [ photoToDelete, setPhotoToDelete ] = useState<Photo>();
   
+  useEffect(simpleAnimation,[]);
+  useEffect(groupAnimation,[]);
+
   useEffect(() => {
     log('useEffect');
     const routeId = match.params.id || '';
@@ -74,7 +77,7 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Edit</IonTitle>
+          <IonTitle className="title">Edit</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={handleSave}>
               Save
@@ -84,16 +87,16 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
       </IonHeader>
         <IonContent>
         <IonItem>
-          <IonLabel>Place: </IonLabel>
+          <IonLabel className="place"><b>Place:</b> </IonLabel>
           <IonInput value={ placeName } onIonChange={e => setPlace(e.detail.value || '')} />
         </IonItem>
         <IonItem>
-          <IonLabel>NoPersons: </IonLabel>
+          <IonLabel className="pers"><b>NoPersons:</b> </IonLabel>
           <IonInput value={ noPersons1 } onIonChange={e => setNoPersons(e.detail.value || '')} />
         </IonItem>
         <IonItem>
           {latitude && longitude &&
-            <MyMap
+            <MyMap 
               lat={latitude}
               lng={longitude}
               onMapClick={setMapPosition}
@@ -106,8 +109,8 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
             <IonRow>
               {photos.map((photo, index) => (
                 photo.placeId == visit?._id && 
-                <IonCol size="4" key={index}>
-                  <IonImg onClick={() => setPhotoToDelete(photo)}
+                <IonCol className="img" size="4" key={index}>
+                  <IonImg  onClick={() => setPhotoToDelete(photo)}
                           src={photo.webviewPath}/>
                 </IonCol>
               ))}
@@ -116,7 +119,7 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
         </IonItem>
         <IonFab vertical="bottom" horizontal="center" slot="fixed">
           <IonFabButton onClick={() => takePhoto(visit?._id)}>
-            <IonIcon icon={camera}/>
+            <IonIcon className="square-a" icon={camera}/>
           </IonFabButton>
         </IonFab>
         <IonActionSheet
@@ -151,6 +154,75 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
       </IonContent>
     </IonPage>
   );
+
+  function groupAnimation() {
+    const el1 = document.querySelector('.place');
+    const el2 = document.querySelector('.pers');
+    if (el1 && el2) {
+      const animation1 = createAnimation()
+          .addElement(el1)
+          .direction('alternate')
+          .iterations(9)
+          .keyframes([
+            {
+              offset: 0, transform: 'skewX(-20deg)'
+            },
+            {
+              offset: 0.5, transform: 'skewX(20deg)'
+            },
+            {
+              offset: 1, transform: 'skewX(0)'
+            },
+          ])
+          
+      const animation2 = createAnimation()
+        .addElement(el2)
+        .direction('alternate')
+        .iterations(9)
+        .keyframes([
+          {
+            offset: 0, transform: 'skewX(20deg)'
+          },
+          {
+            offset: 0.5, transform: 'skewX(-20deg)'
+          },
+          {
+            offset: 1, transform: 'skewX(0)'
+          },
+        ])
+      
+      const parentAnimation = createAnimation()
+        .duration(1000)
+        .addAnimation([ animation1, animation2 ]);
+      parentAnimation.play();
+    }
+  }
+
+
+  function simpleAnimation() {
+    const el = document.querySelector('.title');
+    if (el) {
+      const animation = createAnimation()
+          .addElement(el)
+          .duration(1000)
+          .direction('alternate')
+          .iterations(4)
+          .keyframes([
+            { 
+              offset: 0, transform: 'scale(1)', opacity: '1' 
+            },
+            { 
+              offset: 0.5, transform: 'scale(0.5)', opacity: '0.5' 
+            },
+            {
+              offset: 1, transform: 'scale(0)', opacity: '1'
+            }
+          ]);
+      animation.play();
+    }
+  }
+
+
 };
 
 export default VisitEdit;
