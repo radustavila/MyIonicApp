@@ -5,7 +5,6 @@ import { VisitProps } from './props/VisitProps';
 import { checkServer, createVisit, getListNoPersons, getVisits, newWebSocket, updateVisit } from './api/VisitApi';
 import { AuthContext } from '../auth';
 import { Plugins } from '@capacitor/core';
-import { useNetworkStatus } from '../core/useNetworkStatus';
 
 
 const log = getLogger('ItemProvider');
@@ -93,14 +92,20 @@ const reducer: (state: VisitState, action: ActionProps) => VisitState =
         const visits = [...(state.visits || [])];
         const visit = payload.visit;
         const index = visits.findIndex(it => it._id === visit._id);
+        let upd = false
         if (index === -1 && visit._id !== undefined) {
             if (!payload.syncing) {
               visits.splice(0, 0, visit);
             }
         } else {
           visits[index] = visit;
+          Storage.set({
+            key: "visits",
+            value: JSON.stringify(visits)
+          })
+          upd = true
         }
-        if (payload.offline) {
+        if (payload.offline && upd === false) {
           Storage.set({
             key: "visits",
             value: JSON.stringify(visits)
@@ -148,7 +153,6 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
   
   const { token } = useContext(AuthContext);
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { networkStatus } = useNetworkStatus()
   
   const { visits, fetching, fetchingError,
     saving, savingError,
@@ -180,9 +184,7 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
     page, finalPage, loadMore,
     noPersonsList, selection, isSelected, onSelection, 
     serverConnection, synchronized
-  };
-
-
+  }
   
   log('returns');
   return (
@@ -233,7 +235,7 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
             dispatch({type: UPDATE_SERVER_CONNECTION, payload: { serverConnection: false }})
           }
         }
-      }, 10000);
+      }, 60000);
     }
   }
 
@@ -305,8 +307,6 @@ export const VisitProvider: React.FC<ItemProviderProps> = ({ children }) => {
            lastUpdated = JSON.parse(res.value)
         }
         const visits = await getVisits(token, page, VISITS_LIMIT, selection, lastUpdated);
-        console.log(visits)
-        console.log(visits.length < VISITS_LIMIT ? true : false)
         log('fetchVisits succeeded');
         dispatch({ type: UPDATE_FINAL_PAGE, payload: { finalPage: visits.length < VISITS_LIMIT ? true : false } })
         dispatch({ type: UPDATE_SERVER_CONNECTION, payload: { serverConnection: true } })

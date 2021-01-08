@@ -8,14 +8,15 @@ import {
   IonLoading,
   IonPage,
   IonTitle,
-  IonToolbar, IonLabel, IonItem, IonToast
+  IonToolbar, IonLabel, IonItem, IonToast, IonGrid, IonRow, IonCol, IonImg, IonFab, IonFabButton, IonIcon, IonActionSheet
 } from '@ionic/react';
 import { getLogger } from '../../core';
 import { VisitContext } from '../VisitProvider';
 import { RouteComponentProps } from 'react-router';
 import { VisitProps } from '../props/VisitProps';
-import { useMyLocation } from '../../core/useMyLocation';
 import { MyMap } from './MyMap';
+import { Photo, usePhotoGallery } from '../../core/usePhotoGallery';
+import { camera, close, trash } from 'ionicons/icons';
 
 const log = getLogger('ItemEdit');
 
@@ -25,16 +26,14 @@ interface VisitEditProps extends RouteComponentProps<{
 
 const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
   const { visits, saving, savingError, saveVisit } = useContext(VisitContext);
-  const [placeName, setPlace] = useState('')
-  const [noPersons1, setNoPersons] = useState('')
-  const [visit, setVisit] = useState<VisitProps>();
   const [ numberError, setNumberError ] = useState<string | undefined>()
-  
-  // const myLocation = useMyLocation();
-  // const { latitude: lat, longitude: lng } = myLocation.position?.coords || {}
-  
+  const [ visit, setVisit ] = useState<VisitProps>();
+  const [ placeName, setPlace ] = useState('')
+  const [ noPersons1, setNoPersons ] = useState('')
   const [ latitude, setLatitude ] = useState(46.538666299999996);
   const [ longitude, setLongitude ] = useState(24.565142800000004);
+  const { photos, takePhoto, deletePhoto } = usePhotoGallery();
+  const [ photoToDelete, setPhotoToDelete ] = useState<Photo>();
   
   useEffect(() => {
     log('useEffect');
@@ -51,6 +50,7 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
       }
     }
   }, [match.params.id, visits]);
+
   const handleSave = () => {
     
     const noPersons = parseInt(noPersons1)
@@ -100,6 +100,44 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
               onMarkerClick={log('onMarker: ' + latitude + " - " + longitude)}
             />}
         </IonItem>
+
+        <IonItem>
+          <IonGrid>
+            <IonRow>
+              {photos.map((photo, index) => (
+                photo.placeId == visit?._id && 
+                <IonCol size="4" key={index}>
+                  <IonImg onClick={() => setPhotoToDelete(photo)}
+                          src={photo.webviewPath}/>
+                </IonCol>
+              ))}
+            </IonRow>
+          </IonGrid>
+        </IonItem>
+        <IonFab vertical="bottom" horizontal="center" slot="fixed">
+          <IonFabButton onClick={() => takePhoto(visit?._id)}>
+            <IonIcon icon={camera}/>
+          </IonFabButton>
+        </IonFab>
+        <IonActionSheet
+          isOpen={!!photoToDelete}
+          buttons={[{
+            text: 'Delete',
+            role: 'destructive',
+            icon: trash,
+            handler: () => {
+              if (photoToDelete) {
+                deletePhoto(photoToDelete);
+                setPhotoToDelete(undefined);
+              }
+            }
+          }, {
+            text: 'Cancel',
+            icon: close,
+            role: 'cancel'
+          }]}
+          onDidDismiss={() => setPhotoToDelete(undefined)}
+        />
         <IonToast
           isOpen={numberError ? true : false}
           cssClass="my-toast"
