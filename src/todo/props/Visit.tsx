@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { createAnimation, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCol, IonDatetime, IonGrid, IonImg, IonItem, IonRow } from "@ionic/react";
 import { VisitProps } from "./VisitProps";
 import './Styles.css'
@@ -11,8 +11,6 @@ interface VisitPropsExt extends VisitProps {
 
 const Visit: React.FC<VisitPropsExt> = ({ _id, placeName, date, noPersons, latitude, longitude, onEdit }) => {
     const { photos } = usePhotoGallery();
-
-    // useEffect(chainAnimation, [])
 
     return (
         <IonItem onClick={() => onEdit(_id)}>

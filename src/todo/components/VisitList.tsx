@@ -1,4 +1,4 @@
-import { createAnimation, IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonLoading, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToast, IonToolbar } from "@ionic/react";
+import { createAnimation, IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonImg, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonLoading, IonModal, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToast, IonToolbar } from "@ionic/react";
 import { add, wifi } from "ionicons/icons";
 import React, { useContext, useEffect, useState } from "react";
 import { RouteComponentProps } from "react-router";
@@ -21,7 +21,10 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
         isSelected, 
         serverConnection, synchronized
     } = useContext(VisitContext)
+
     const [ searchVisitByPlace, setSearchVisitByPlace ] = useState<string>('');
+    const [ showModal, setShowModal ] = useState(false);
+    useEffect(chainAnimation, [])
 
     const handleLogout = () => {
         Storage.remove({ key:"lastUpdated" })
@@ -45,8 +48,31 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
         loadMore && loadMore(visits);
         ($event.target as HTMLIonInfiniteScrollElement).complete();
     }
-    useEffect(chainAnimation, [])
 
+    const enterAnimation = (baseEl: any) => {
+        const backdropAnimation = createAnimation()
+            .addElement(baseEl.querySelector('ion-backdrop')!)
+            .fromTo('opacity', '0.01', 'var(--backdrop-opacity)');
+    
+        const wrapperAnimation = createAnimation()
+            .addElement(baseEl.querySelector('.modal-wrapper')!)
+            .keyframes([
+              { offset: 0, opacity: '0', transform: 'scale(0)' },
+              { offset: 1, opacity: '0.99', transform: 'scale(1)' }
+            ]);
+    
+        return createAnimation()
+            .addElement(baseEl)
+            .easing('ease-out')
+            .duration(500)
+            .addAnimation([backdropAnimation, wrapperAnimation]);
+    }
+    
+    const leaveAnimation = (baseEl: any) => {
+    return enterAnimation(baseEl).direction('reverse');
+    }
+
+    
 
     log('render')
     return (
@@ -57,7 +83,14 @@ const VisitList: React.FC<RouteComponentProps> = ({ history }) => {
                         Visit Tracer
                         <IonIcon className={"network-icon-" + networkStatus.connected} icon={wifi}></IonIcon>
                     </IonTitle>
+                    <IonModal isOpen={showModal} enterAnimation={enterAnimation} leaveAnimation={leaveAnimation}>
+                        <IonImg className="img" src="assets\images\info.jpg"/>
+                        <IonButton onClick={() => setShowModal(false)}>Close</IonButton>
+                    </IonModal>
                     <IonButtons slot="end">
+                        <IonButton expand="full" onClick={() => setShowModal(true)}>
+                            Info
+                        </IonButton>
                         <IonButton onClick={handleLogout}>
                             Logout
                         </IonButton>

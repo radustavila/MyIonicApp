@@ -108,7 +108,7 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
           <IonGrid>
             <IonRow>
               {photos.map((photo, index) => (
-                photo.placeId == visit?._id && 
+                photo.placeId === visit?._id && 
                 <IonCol className="img" size="4" key={index}>
                   <IonImg  onClick={() => setPhotoToDelete(photo)}
                           src={photo.webviewPath}/>
@@ -212,10 +212,10 @@ const VisitEdit: React.FC<VisitEditProps> = ({ history, match }) => {
               offset: 0, transform: 'scale(1)', opacity: '1' 
             },
             { 
-              offset: 0.5, transform: 'scale(0.5)', opacity: '0.5' 
+              offset: 0.5, transform: 'scale(0.92)', opacity: '0.7' 
             },
             {
-              offset: 1, transform: 'scale(0)', opacity: '1'
+              offset: 1, transform: 'scale(0.85)', opacity: '0.3'
             }
           ]);
       animation.play();

@@ -23,3 +23,7 @@ ion-select::part(text) {
 .square-a {
     font-size: xx-large;
 }
+
+.img {
+    width: 80%;
+}
